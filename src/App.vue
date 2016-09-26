@@ -32,8 +32,8 @@ export default {
     console.log(this.conn);
     this.conn.listen({
       onOpened: function(){
-        document.cookie="user=" + this.context.userId;
-        document.cookie="token=" + this.context.accessToken;
+        self.setCookie('user', this.context.userId);
+        self.setCookie('token', this.context.accessToken);
         console.log(this.context.userId + "登陆成功");
         self.$route.router.go({name: 'user',params: {userId: this.context.userId}})
       },
@@ -53,13 +53,19 @@ export default {
       };
 
       this.conn.open(options);
+    },
+    setCookie: function(name,value) {
+      var Days = 30;
+      var exp = new Date();
+      exp.setTime(exp.getTime() + Days*24*60*60*1000);
+      document.cookie = name + "="+ escape (value) + ";expires=" + exp.toGMTString();
     }
   }
 }
 </script>
 
 <style>
-html,body,h1,h2,div,ul,li {
+html,body,h1,h2,p,div,ul,li {
   margin: 0;
   padding: 0;
 }
@@ -97,9 +103,9 @@ body {
 }
 
 .wraper {
+  height: 480px;
   display: flex;
   flex-direction: column;
-  min-height: 480px;
   border: 1px solid #F43530;
   border-radius: 10px;
   padding: 20px;

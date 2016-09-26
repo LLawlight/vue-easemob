@@ -7,11 +7,13 @@
         <li v-for="friend in friends" @click="selectedEvt" class="friendName">{{friend.name}}</li>
       </ul>
     </div>
-    <div class="char">
+    <div class="char" v-show="selected!==''">
       <div class="message">
-        <p v-show="selected!==''">正在和 {{selected}} 聊天</p>
-        <div v-for="message in messages" class="newMessage">
-          {{message.from}}: {{message.data}}
+        <p>正在和 {{selected}} 聊天</p>
+        <div class="messageAll">
+          <div v-for="message in messages | filterBy selected in 'from' 'to'" class="newMessage" :class="{'owner': message.from == username}">
+            {{message.from}}: {{message.data}}
+          </div>
         </div>
       </div>
       <div class="messageInput">
@@ -61,7 +63,6 @@ export default {
         self.$route.$router.go({name: 'index'})
       },
       onTextMessage: function(message) {
-        self.conn.setPresence();
         console.log(message);
         self.messages.push(message);
       },
@@ -83,10 +84,15 @@ export default {
     });
   },
   attached() {},
+  watch: {
+    'messages': function() {
+      this.goBottom();
+    }
+  },
   methods: {
     login: function() {
-      this.username = document.cookie.split(';')[1].split('=')[1]
-      var auth = document.cookie.split(';')[2].split('=')[1]
+      this.username = document.cookie.split(';')[0].split('=')[1]
+      var auth = document.cookie.split(';')[1].split('=')[1]
       var options = {
         apiUrl: WebIM.config.apiURL,
         accessToken : auth,
@@ -112,7 +118,8 @@ export default {
         type: "chat",
         success: function ( id, serverMsgId ) {
           console.log("发送成功");
-          self.messages.push({from: self.username, data: messageContext});
+          self.messages.push({from: self.username, to: self.selected, data: messageContext});
+          console.log(self.messages);
         }//消息发送成功回调
       });
       this.conn.send(msg.body);
@@ -127,6 +134,10 @@ export default {
       event.target.style.backgroundColor = "red";
       event.target.style.color = "white";
       this.selected = event.target.innerText;
+    },
+    goBottom: function() {
+      var goBottomDiv = document.getElementsByClassName('messageAll')[0];
+      goBottomDiv.scrollTop = goBottomDiv.scrollHeight;
     }
   },
   components: {}
@@ -139,16 +150,15 @@ export default {
   flex-grow: 2;
   align-items: stretch;
   margin: 10px 0;
+  min-height: 400px;
 }
 
 .window>div {
-  float: left;
   border: 1px solid #F43530;
-  border-radius: 10px;
 }
 
 .friends {
-  width: 20%;
+  padding: 5px;
   margin-right: 5px;
 }
 .friendName {
@@ -163,12 +173,29 @@ export default {
 }
 
 .message {
-  flex-grow: 2;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 5;
   border-bottom: 1px solid #F43530;
+  max-height: 80%;
+}
+
+.message p {
+  padding: 5px 0;
+  border-bottom: 1px solid #F43530;
+}
+.messageAll {
+  /*flex-grow: 2;*/
+  overflow-y: auto;
+  max-height: 80%;
 }
 
 .newMessage {
   text-align: left;
+}
+
+.owner {
+  text-align: right;
 }
 
 .messageInput {
@@ -182,6 +209,5 @@ export default {
 .messageInput textarea{
   width: 100%;
   resize: none;
-  border-radius: 0 0 10px 10px;
 }
 </style>
